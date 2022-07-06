@@ -7,6 +7,12 @@ import {SafeTransferLib, ERC20} from "lib/solmate/src/utils/SafeTransferLib.sol"
 
 import {FullMath}               from "./FullMath.sol";
 
+// @notice              Allows a buyer to 'fulfill' an order given they've got
+//                      an secp256k1 signature from a seller containing verifiable
+//                      metadata about the trade. The seller can accept native ETH
+//                      or an ERC-20 if they're whitelisted.
+//
+// @author              Dionysus @ConcaveFi
 contract FixedOrderMarket {
 
     //////////////////////////////////////////////////////////////////////
@@ -19,7 +25,7 @@ contract FixedOrderMarket {
 
     bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
 
-    bytes32 public immutable FULFILL_TYPEHASH = keccak256("FulFill(address seller,address erc721,address erc20,uint256 tokenId,uint256 price,uint256 nonce,uint256 deadline)");
+    bytes32 public constant FULFILL_TYPEHASH = keccak256("FulFill(address seller,address erc721,address erc20,uint256 tokenId,uint256 price,uint256 nonce,uint256 deadline)");
 
     //////////////////////////////////////////////////////////////////////
     // MUTABLE STORAGE
@@ -56,20 +62,37 @@ contract FixedOrderMarket {
     );
 
     //////////////////////////////////////////////////////////////////////
+    // USER ACTION ERRORS
+    //////////////////////////////////////////////////////////////////////
+
+    // error tokenNotWhitelisted();
+
+    // error signatureExpired();
+
+    // error signatureInvalid();
+
+    // error insufficientMsgValue();
+
+    //////////////////////////////////////////////////////////////////////
     // USER ACTIONS
     //////////////////////////////////////////////////////////////////////
 
-    // @notice              
+    // @notice              Allows a buyer to 'fulfill' an order given they've got
+    //                      an secp256k1 signature from a seller containing verifiable
+    //                      metadata about the trade.
+    //
+    // @dev                 If 'erc20' is equal to address(0), we assume the seller wants
+    //                      native ETH in exchange for their 'erc721'.
     //
     // @param seller        The address of the account that wants to sell their 
     //                      'erc721' in exchange for 'price' denominated in 'erc20'
     //
-    // @param erc721        The address of a contract that follows the ERC-721 standard.
-    //                      Also the address of the collection that holds the token that 
+    // @param erc721        The address of a contract that follows the ERC-721 standard,
+    //                      also the address of the collection that holds the token that 
     //                      you're purchasing.
     //
-    // @param erc20         The address of a contract that follows the ERC-20 standard.
-    //                      Also the address of the token that the seller wants in exchange
+    // @param erc20         The address of a contract that follows the ERC-20 standard,
+    //                      also the address of the token that the seller wants in exchange
     //                      for their 'erc721'
     //
     // @param tokenId       The 'erc721' token identification number, 'tokenId'.
@@ -77,13 +100,13 @@ contract FixedOrderMarket {
     // @param price         The amount of 'erc20' that the 'seller' wants in exchange for
     //                      their 'erc721'
     //
-    // @param deadline      The time set to be the expiration for the order
+    // @param deadline      The time in which the signature is not valid after.
     //
-    // @param v             signature
+    // @param v             v is part of a valid secp256k1 signature from the seller.
     //
-    // @param r             signature
+    // @param r             r is part of a valid secp256k1 signature from the seller.
     //
-    // @param s             signature
+    // @param s             s is part of a valid secp256k1 signature from the seller.
     function fulfill(
         address seller,
         address erc721,
@@ -97,7 +120,7 @@ contract FixedOrderMarket {
     ) external payable {
 
         // Make sure both the 'erc721' and the 'erc20' wanted in exchange are both allowed.
-        require(allowed[erc721] && allowed[erc20], "notWhitelisted()");
+        require(allowed[erc721] && allowed[erc20], "tokenNotWhitelisted()");
 
         // Make sure the deadline the 'seller' has specified has not elapsed.
         require(deadline >= block.timestamp, "orderExpired()");
@@ -119,7 +142,7 @@ contract FixedOrderMarket {
         );
 
         // Make sure the recovered address is not NULL, and is equal to the 'seller'.
-        require(recoveredAddress != address(0) && recoveredAddress == seller, "invalidSignature()");
+        require(recoveredAddress != address(0) && recoveredAddress == seller, "signatureInvalid()");
     
         // Increment 'seller's nonce by one, unchecked because nonce increasing will not reasonably overflow.
         unchecked { nonces[seller]++; }
@@ -136,7 +159,7 @@ contract FixedOrderMarket {
             // Transfer msg.value minus 'fee' from this contract to 'seller'
             SafeTransferLib.safeTransferETH(recoveredAddress, price - fee);
 
-            // If 'erc20' is not NULL, we assume the seller wants a ERC20.
+        // If 'erc20' is not NULL, we assume the seller wants a ERC20.
         } else {
 
             // Transfer 'erc20' 'price' minus 'fee' from caller to 'seller'.
