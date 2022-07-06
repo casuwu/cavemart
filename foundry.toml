@@ -65,7 +65,7 @@ fuzz_runs = 256
 fuzz_max_local_rejects = 65536
 
 # The max number of combined inputs that may be rejected before a fuzz test aborts
-fuzz_max_global_rejects = 3000
+fuzz_max_global_rejects = 10000
 
 # Whether or not to enable `vm.ffi`
 ffi = false
