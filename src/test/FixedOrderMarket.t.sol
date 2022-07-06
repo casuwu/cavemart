@@ -9,8 +9,6 @@ import "../FixedOrderMarket.sol";
 
 contract FixedOrderMarketTest is Test {
 
-    bytes32 FULFILL_TYPEHASH = keccak256("FulFill(address seller,address offered,address wanted,uint256 tokenId,uint256 amount,uint256 nonce,uint256 deadline)");
-
     // @notice          GEM is an ERC20
     MockERC20 GEM;
 
@@ -98,7 +96,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
                 )
             )
         );
@@ -133,7 +131,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(0), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(0), tokenId, amount, 0, block.timestamp))
                 )
             )
         );
@@ -166,7 +164,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, nonce, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, nonce, block.timestamp))
                 )
             )
         );
@@ -191,7 +189,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, nonce, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, nonce, block.timestamp))
                 )
             )
         );
@@ -217,7 +215,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, nonce, block.timestamp - 1))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, nonce, block.timestamp - 1))
                 )
             )
         );
@@ -239,7 +237,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
                 )
             )
         );
@@ -264,7 +262,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
                 )
             )
         );
@@ -288,7 +286,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
                 )
             )
         );
@@ -314,7 +312,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp - 1))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp - 1))
                 )
             )
         );
@@ -341,7 +339,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), BOB, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
                 )
             )
         );
@@ -371,7 +369,7 @@ contract FixedOrderMarketTest is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     FOM.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(FULFILL_TYPEHASH, EVE, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
+                    keccak256(abi.encode(FOM.FULFILL_TYPEHASH(), EVE, address(NFT), address(GEM), tokenId, amount, 0, block.timestamp))
                 )
             )
         );

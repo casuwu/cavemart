@@ -19,8 +19,7 @@ contract FixedOrderMarket {
 
     bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
 
-    // TODO REDO THIS
-    bytes32 internal immutable FULFILL_TYPEHASH = 0xdb2cdea11e430f3cbb4cdb7115691ed4cf04ff65eafd8dc6394cb4548b074398;
+    bytes32 public immutable FULFILL_TYPEHASH = keccak256("FulFill(address seller,address erc721,address erc20,uint256 tokenId,uint256 price,uint256 nonce,uint256 deadline)");
 
     //////////////////////////////////////////////////////////////////////
     // MUTABLE STORAGE
@@ -136,10 +135,6 @@ contract FixedOrderMarket {
 
             // Transfer msg.value minus 'fee' from this contract to 'seller'
             SafeTransferLib.safeTransferETH(recoveredAddress, price - fee);
-            
-            // TODO manually withdraw eth
-            // // Tranfer remaining balance to 'feeAddress'
-            // if (fee > 0 ) SafeTransferLib.safeTransferETH(feeAddress, address(this).balance);
 
             // If 'erc20' is not NULL, we assume the seller wants a ERC20.
         } else {
@@ -147,9 +142,8 @@ contract FixedOrderMarket {
             // Transfer 'erc20' 'price' minus 'fee' from caller to 'seller'.
             SafeTransferLib.safeTransferFrom(ERC20(erc20), msg.sender, recoveredAddress, price - fee);
             
-            // Transfer 'fee' to 'feeAddress'.
-            SafeTransferLib.safeTransferFrom(ERC20(erc20), msg.sender, feeAddress, fee);
-        
+            // // Transfer 'fee' to 'feeAddress'.
+            // SafeTransferLib.safeTransferFrom(ERC20(erc20), msg.sender, feeAddress, fee);
         }
 
         // Transfer 'erc721' from 'seller' to msg.sender/caller.
@@ -175,6 +169,11 @@ contract FixedOrderMarket {
     event WhitelistUpdated(
         address token,
         bool whitelisted
+    );
+
+    event FeeCollection(
+        address token,
+        uint256 amount
     );
     
     //////////////////////////////////////////////////////////////////////
@@ -204,6 +203,18 @@ contract FixedOrderMarket {
         bool whitelisted = !allowed[token];
         allowed[token] = whitelisted;
         emit WhitelistUpdated(token, whitelisted);
+    }
+
+    function collectEther() external access {
+        uint256 balance = address(this).balance;
+        SafeTransferLib.safeTransferETH(feeAddress, balance);
+        emit FeeCollection(address(0), balance);
+    }
+
+    function collectERC20(address token) external access {
+        uint256 balance = ERC20(token).balanceOf(address(this));
+        SafeTransferLib.safeTransfer(ERC20(token), feeAddress, balance);
+        emit FeeCollection(token, balance);
     }
 
     //////////////////////////////////////////////////////////////////////
