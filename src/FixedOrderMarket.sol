@@ -142,8 +142,8 @@ contract FixedOrderMarket {
             // Transfer 'erc20' 'price' minus 'fee' from caller to 'seller'.
             SafeTransferLib.safeTransferFrom(ERC20(erc20), msg.sender, recoveredAddress, price - fee);
             
-            // // Transfer 'fee' to 'feeAddress'.
-            // SafeTransferLib.safeTransferFrom(ERC20(erc20), msg.sender, feeAddress, fee);
+            // Transfer 'fee' to 'feeAddress'.
+            SafeTransferLib.safeTransferFrom(ERC20(erc20), msg.sender, feeAddress, fee);
         }
 
         // Transfer 'erc721' from 'seller' to msg.sender/caller.
