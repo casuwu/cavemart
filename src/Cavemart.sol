@@ -28,9 +28,8 @@ contract Cavemart {
 
     bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
 
-    // TODO
-    // keccak256("FulFill(address seller,address erc721,address erc20,uint256 tokenId,uint256 price,uint256 nonce,uint256 deadline)")
-    bytes32 public constant SWAP_TYPEHASH = 0x23a27891e65e6e1755f07adab331a8ea10ca325ee538756056d223ac73fd97a6;
+    // keccak256("Swap(address seller,address erc721,address erc20,uint256 tokenId,uint256 startPrice,uint256 endPrice,uint256 nonce,uint256 start,uint256 deadline)")
+    bytes32 public constant SWAP_TYPEHASH = 0x8bca9397be6761f8836a3f24b102db891d663d3e2e89a7c7eea2479c3431068b;
 
     //////////////////////////////////////////////////////////////////////
     // MUTABLE STORAGE

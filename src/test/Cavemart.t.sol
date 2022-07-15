@@ -97,6 +97,42 @@ contract CavemartTest is Test {
         (v, r, s) = vm.sign(userPk, keccak256(abi.encodePacked("\x19\x01", cavemart.DOMAIN_SEPARATOR(), hash)));
     }
 
+    function testComputeSigner(uint256 startPrice, uint256 tokenId, uint256 feePercent) public {
+
+        vm.assume(startPrice >= 1e4);
+        vm.assume(feePercent <= 1e4);
+
+        cavemart.updateCollectionFee(address(erc721), feePercent);
+
+        setUpBalances(startPrice, tokenId);
+
+        (uint8 v, bytes32 r, bytes32 s) = sign(
+            BOB,
+            BOB_PK,
+            address(erc721), 
+            address(erc20), 
+            tokenId, 
+            startPrice,
+            0,      // Denotes Fixed Price Order 
+            0,
+            0,      // Denotes Fixed Price Order
+            block.timestamp
+        );
+
+        address signer = cavemart.computeSigner(Cavemart.SwapMetadata(
+            BOB,
+            address(erc721), 
+            address(erc20), 
+            tokenId, 
+            startPrice,
+            0,      // Denotes Fixed Price Order 
+            0,      // Denotes Fixed Price Order
+            block.timestamp
+            ), 0, v, r, s);
+
+            assertEq(BOB, signer);
+    }
+
     function testSwapFixed(uint256 startPrice, uint256 tokenId, uint256 feePercent) public {
 
         vm.assume(startPrice >= 1e4);
