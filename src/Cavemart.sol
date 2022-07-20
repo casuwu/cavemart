@@ -18,6 +18,8 @@ contract Cavemart {
 	// @dev This function ensures this contract can receive ETH
 	receive() external payable {}
 
+    // todo erc721.onTokenReceived()
+
     //////////////////////////////////////////////////////////////////////
     // IMMUTABLE STORAGE
     //////////////////////////////////////////////////////////////////////
@@ -44,8 +46,8 @@ contract Cavemart {
     // @notice Returns whether a token is allowed to be traded within this contract.
     mapping(address => bool) public allowed;
 
-    // @notice Returns the current nonce of a specific address.
-    mapping(address => uint256) public nonces;
+    // @notice Returns whether a specific signature has been executed before.
+    mapping(bytes32 => bool) public executed;
 
     //////////////////////////////////////////////////////////////////////
     // CONSTRUCTION
@@ -71,70 +73,6 @@ contract Cavemart {
 
     //////////////////////////////////////////////////////////////////////
     // EIP-712 LOGIC
-    //////////////////////////////////////////////////////////////////////
-
-    function computeSigner(
-        SwapMetadata calldata data,
-        uint256 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public virtual view returns (address signer) {
-        
-        bytes32 hash = keccak256(
-            abi.encode(
-                SWAP_TYPEHASH, 
-                data.seller, 
-                data.erc721, 
-                data.erc20, 
-                data.tokenId, 
-                data.startPrice,
-                data.endPrice, 
-                nonce,
-                data.start, 
-                data.deadline
-            )
-        );
-        
-        signer = ecrecover(keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR(), hash)), v, r, s);
-    }
-
-    function DOMAIN_SEPARATOR() public virtual view returns (bytes32) {
-        return block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
-    }
-
-    function computeDomainSeparator() internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                    keccak256(bytes("Fixed Order Market")),
-                    keccak256("1"),
-                    block.chainid,
-                    address(this)
-                )
-            );
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // PRICE LOGIC
-    //////////////////////////////////////////////////////////////////////
-
-    function computePrice(
-        SwapMetadata calldata data
-    ) public virtual view returns (uint256 price) {
-
-        data.endPrice == 0 || data.start == 0 ? 
-            price = data.startPrice : 
-            price = data.startPrice - FullMath.mulDiv(
-                data.startPrice - data.endPrice, 
-                block.timestamp - data.start, 
-                data.deadline - data.start
-            );
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // USER ACTIONS
     //////////////////////////////////////////////////////////////////////
 
     // @notice              Struct containing metadata for a ERC721 <-> ERC20 trade.
@@ -169,7 +107,7 @@ contract Cavemart {
     // @param start         The time in which the dutch auction starts, if ZERO we assume 
     //                      the 'seller' is hosting a dutch auction.
     //
-    // @param deadline      The time in which the signature/swap is not valid after.
+    // @param deadline      The time in which the signature/swap is not valid after.   
     struct SwapMetadata {
         address seller;
         address erc721;
@@ -180,6 +118,66 @@ contract Cavemart {
         uint256 start;
         uint256 deadline;
     }
+
+    function computeSigner(
+        SwapMetadata calldata data,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual view returns (address signer) {
+
+        bytes32 hash = keccak256(
+            abi.encode(
+                SWAP_TYPEHASH, 
+                data.seller, 
+                data.erc721, 
+                data.erc20, 
+                data.tokenId, 
+                data.startPrice,
+                data.endPrice, 
+                data.start, 
+                data.deadline
+            )
+        );
+        
+        signer = ecrecover(keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR(), hash)), v, r, s);
+    }
+
+    function DOMAIN_SEPARATOR() public virtual view returns (bytes32) {
+        return block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
+    }
+
+    function computeDomainSeparator() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes("Cavemart")),
+                keccak256("1"),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // PRICE LOGIC
+    //////////////////////////////////////////////////////////////////////
+
+    function computePrice(
+        SwapMetadata calldata data
+    ) public virtual view returns (uint256 price) {
+        data.endPrice == 0 || data.start == 0 ? 
+            price = data.startPrice : 
+            price = data.startPrice - FullMath.mulDiv(
+                data.startPrice - data.endPrice, 
+                block.timestamp - data.start, 
+                data.deadline - data.start
+            );
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // USER ACTIONS
+    //////////////////////////////////////////////////////////////////////
 
     // @notice              Allows a buyer to execute an order given they've got
     //                      an secp256k1 signature from a seller containing verifiable
@@ -205,11 +203,18 @@ contract Cavemart {
         // Make sure the deadline the 'seller' has specified has not elapsed.
         require(data.deadline >= block.timestamp, "orderExpired()");
 
-        address signer = computeSigner(data, nonces[data.seller]++, v, r, s);
+        bytes32 dataHash = keccak256(abi.encode(data));
+
+        // Make sure the signature has not already been executed.
+        require(!executed[dataHash], "signatureExecuted()");
+        
+        address signer = computeSigner(data, v, r, s);
 
         // Make sure the recovered address is not NULL, and is equal to the 'seller'.
         require(signer != address(0) && signer == data.seller, "signatureInvalid()");
         
+        executed[dataHash] = true;
+
         uint256 price = computePrice(data);
 
         // Cache the fee that's going to be charged to the 'seller'.
@@ -231,7 +236,7 @@ contract Cavemart {
             SafeTransferLib.safeTransferFrom(ERC20(data.erc20), msg.sender, signer, price - fee);
             
             // Transfer 'fee' to 'feeAddress'.
-            SafeTransferLib.safeTransferFrom(ERC20(data.erc20), msg.sender, feeAddress, fee);
+            if (fee > 0) SafeTransferLib.safeTransferFrom(ERC20(data.erc20), msg.sender, feeAddress, fee);
         }
 
         // Transfer 'erc721' from 'seller' to msg.sender/caller.
@@ -314,8 +319,6 @@ contract Cavemart {
     // EXTERNAL SIGNATURE VERIFICATION LOGIC
     //////////////////////////////////////////////////////////////////////
 
-    // TODO 
-
     function verify(
         SwapMetadata calldata data,
         address buyer,
@@ -323,8 +326,8 @@ contract Cavemart {
         bytes32 r,
         bytes32 s
     ) external virtual view returns (bool valid) {
-        
-        // make sure users have approvals as well
+
+        // TODO make sure users have approvals as well
 
         // Make sure current time is greater than 'start' if order type is dutch auction. 
         if (data.start == 0 || data.endPrice == 0) {
@@ -345,7 +348,7 @@ contract Cavemart {
             if (ERC20(data.erc20).balanceOf(buyer) < computePrice(data) && buyer != address(0)) return false;
         }
 
-        address signer = computeSigner(data, nonces[data.seller], v, r, s);
+        address signer = computeSigner(data, v, r, s);
 
         // Make sure the recovered address is not NULL, and is equal to the 'seller'.
         if (signer == address(0) || signer != data.seller) return false;

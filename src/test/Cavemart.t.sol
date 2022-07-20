@@ -59,12 +59,11 @@ contract CavemartTest is Test {
     }
 
     // PRE-TEST SETUP HELPERS
-
+    
     function setUpBalances(
         uint256 startPrice, 
         uint256 tokenId
     ) public {
-
         // Mint ALICE the startPrice that's going to be paid to BOB
         erc20.mint(ALICE, startPrice);
         // Mint BOB the erc721 he's going to sell to Alice
@@ -87,12 +86,11 @@ contract CavemartTest is Test {
         uint256 tokenId, 
         uint256 startPrice, 
         uint256 endPrice, 
-        uint256 nonce, 
         uint256 start, 
         uint256 deadline
     ) internal returns (uint8 v, bytes32 r, bytes32 s) {
 
-        bytes32 hash = keccak256(abi.encode(cavemart.SWAP_TYPEHASH(),user,erc721,erc20,tokenId,startPrice,endPrice,nonce,start,deadline));
+        bytes32 hash = keccak256(abi.encode(cavemart.SWAP_TYPEHASH(),user,erc721,erc20,tokenId,startPrice,endPrice,start,deadline));
 
         (v, r, s) = vm.sign(userPk, keccak256(abi.encodePacked("\x19\x01", cavemart.DOMAIN_SEPARATOR(), hash)));
     }
@@ -111,26 +109,30 @@ contract CavemartTest is Test {
             BOB_PK,
             address(erc721), 
             address(erc20), 
-            tokenId, 
+            tokenId,
             startPrice,
             0,      // Denotes Fixed Price Order 
-            0,
             0,      // Denotes Fixed Price Order
             block.timestamp
         );
 
-        address signer = cavemart.computeSigner(Cavemart.SwapMetadata(
-            BOB,
-            address(erc721), 
-            address(erc20), 
-            tokenId, 
-            startPrice,
-            0,      // Denotes Fixed Price Order 
-            0,      // Denotes Fixed Price Order
-            block.timestamp
-            ), 0, v, r, s);
+        address signer = cavemart.computeSigner(
+            Cavemart.SwapMetadata(
+                BOB,
+                address(erc721), 
+                address(erc20), 
+                tokenId, 
+                startPrice,
+                0,      // Denotes Fixed Price Order 
+                0,      // Denotes Fixed Price Order
+                block.timestamp
+            ),
+            v, 
+            r, 
+            s
+        );
 
-            assertEq(BOB, signer);
+        assertEq(BOB, signer);
     }
 
     function testSwapFixed(uint256 startPrice, uint256 tokenId, uint256 feePercent) public {
@@ -150,7 +152,6 @@ contract CavemartTest is Test {
             tokenId, 
             startPrice,
             0,      // Denotes Fixed Price Order 
-            0,
             0,      // Denotes Fixed Price Order
             block.timestamp
         );
@@ -171,7 +172,7 @@ contract CavemartTest is Test {
 
         uint256 fee = FullMath.mulDiv(startPrice, feePercent, 1e4);
 
-        assertEq(cavemart.nonces(BOB), 1);
+        // assertEq(cavemart.nonces(BOB), 1);
         assertEq(erc20.balanceOf(BOB), startPrice - fee);
         assertEq(erc721.ownerOf(tokenId), ALICE);
         assertEq(erc20.balanceOf(cavemart.feeAddress()), fee);
@@ -194,8 +195,7 @@ contract CavemartTest is Test {
             address(erc20), 
             tokenId, 
             startPrice,
-            endPrice, 
-            0,
+            endPrice,
             start,      // Denotes Fixed Price Order
             block.timestamp
         );
@@ -221,7 +221,7 @@ contract CavemartTest is Test {
 
         uint256 fee = FullMath.mulDiv(price, feePercent, 1e4);
 
-        assertEq(cavemart.nonces(BOB), 1);
+        // assertEq(cavemart.nonces(BOB), 1);
         assertEq(erc20.balanceOf(BOB), price - fee);
         assertEq(erc721.ownerOf(tokenId), ALICE);
         assertEq(erc20.balanceOf(cavemart.feeAddress()), fee);
@@ -247,7 +247,6 @@ contract CavemartTest is Test {
             startPrice, 
             0, 
             0, 
-            0, 
             block.timestamp
         );
 
@@ -268,7 +267,7 @@ contract CavemartTest is Test {
 
         uint256 fee = FullMath.mulDiv(startPrice, feePercent, 1e4);
 
-        assertEq(cavemart.nonces(BOB), 1);
+        // assertEq(cavemart.nonces(BOB), 1);
         assertEq(BOB.balance, startPrice - fee);
         assertEq(erc721.ownerOf(tokenId), ALICE);
         assertEq(address(cavemart).balance, fee);
@@ -296,7 +295,6 @@ contract CavemartTest is Test {
             tokenId, 
             startPrice, 
             endPrice, 
-            0, 
             start, 
             block.timestamp
         );
@@ -320,46 +318,46 @@ contract CavemartTest is Test {
 
         uint256 fee = FullMath.mulDiv(price, feePercent, 1e4);
 
-        assertEq(cavemart.nonces(BOB), 1);
+        // assertEq(cavemart.nonces(BOB), 1);
         assertEq(BOB.balance, price - fee);
         assertEq(erc721.ownerOf(tokenId), ALICE);
         assertEq(address(cavemart).balance, fee);
     }
 
-    function testFailSwapBadNonce(uint256 startPrice, uint256 tokenId, uint256 nonce) public {
+    // function testFailSwapBadNonce(uint256 startPrice, uint256 tokenId, uint256 nonce) public {
 
-        vm.assume(startPrice >= 1e4);
-        vm.assume(nonce > 0);
+    //     vm.assume(startPrice >= 1e4);
+    //     vm.assume(nonce > 0);
 
-        setUpBalances(startPrice, tokenId);
+    //     setUpBalances(startPrice, tokenId);
 
-        (uint8 v, bytes32 r, bytes32 s) = sign(
-            BOB,
-            BOB_PK,
-            address(erc721), 
-            address(erc20), 
-            tokenId, 
-            startPrice,
-            0,      // Denotes Fixed Price Order 
-            nonce,  // Some invalid nonce
-            0,      // Denotes Fixed Price Order
-            block.timestamp
-        );
+    //     (uint8 v, bytes32 r, bytes32 s) = sign(
+    //         BOB,
+    //         BOB_PK,
+    //         address(erc721), 
+    //         address(erc20), 
+    //         tokenId, 
+    //         startPrice,
+    //         0,      // Denotes Fixed Price Order 
+    //         nonce,  // Some invalid nonce
+    //         0,      // Denotes Fixed Price Order
+    //         block.timestamp
+    //     );
 
-        vm.prank(ALICE);
-        cavemart.swap(
-            Cavemart.SwapMetadata(
-                BOB, 
-                address(erc721), 
-                address(erc20), 
-                tokenId, 
-                startPrice, 
-                0, 
-                0, 
-                block.timestamp
-            ), v, r, s
-        );
-    }
+    //     vm.prank(ALICE);
+    //     cavemart.swap(
+    //         Cavemart.SwapMetadata(
+    //             BOB, 
+    //             address(erc721), 
+    //             address(erc20), 
+    //             tokenId, 
+    //             startPrice, 
+    //             0, 
+    //             0, 
+    //             block.timestamp
+    //         ), v, r, s
+    //     );
+    // }
 
     function testFailSwapBadDeadline(uint256 startPrice, uint256 tokenId) public {
 
@@ -375,7 +373,6 @@ contract CavemartTest is Test {
             tokenId, 
             startPrice,
             0,      // Denotes Fixed Price Order 
-            0,
             0,      // Denotes Fixed Price Order
             block.timestamp
         );
@@ -395,7 +392,7 @@ contract CavemartTest is Test {
         );
     }
 
-    function testFailSwapPastDeadline(uint256 startPrice, uint256 tokenId, uint256 nonce) public {
+    function testFailSwapPastDeadline(uint256 startPrice, uint256 tokenId) public {
 
         vm.assume(startPrice >= 1e4);
 
@@ -409,7 +406,6 @@ contract CavemartTest is Test {
             tokenId, 
             startPrice,
             0,      // Denotes Fixed Price Order 
-            0,
             0,      // Denotes Fixed Price Order
             block.timestamp - 1
         );
@@ -441,7 +437,6 @@ contract CavemartTest is Test {
             tokenId, 
             startPrice,
             0,      // Denotes Fixed Price Order 
-            0,
             0,      // Denotes Fixed Price Order
             block.timestamp
         );
