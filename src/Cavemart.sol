@@ -333,8 +333,6 @@ contract Cavemart {
         bytes32 s
     ) external virtual view returns (bool valid) {
 
-        // TODO make sure users have approvals as well
-
         // Make sure current time is greater than 'start' if order type is dutch auction. 
         if (data.start == 0 || data.endPrice == 0) {
             if (data.start > block.timestamp) return false;
@@ -346,8 +344,8 @@ contract Cavemart {
         // Make sure the deadline the 'seller' has specified has not elapsed.
         if (data.deadline < block.timestamp) return false;
 
-        // Make sure the 'seller' still owns the 'erc721' being offered.
-        if (IERC721(data.erc721).ownerOf(data.tokenId) != data.seller) return false;
+        // Make sure the 'seller' still owns the 'erc721' being offered, and has approved this contract to spend it.
+        if (IERC721(data.erc721).ownerOf(data.tokenId) != data.seller || IERC721(data.erc721).getApproved(data.tokenId) != address(this)) return false;
 
         // Make sure the buyer has 'price' denominated in 'erc20' if 'erc20' is not native ETH.
         if (data.erc20 != address(0)) {
