@@ -22,7 +22,7 @@ contract Cavemart {
         address,
         uint256,
         bytes memory
-    ) public virtual override returns (bytes4) {
+    ) public virtual returns (bytes4) {
         return 0x150b7a02;
     }
 
