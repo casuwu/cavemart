@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import {FullMath}               from "./FullMath.sol";
-import {SafeTransferLib, ERC20} from "lib/solmate/src/utils/SafeTransferLib.sol";
 import {IERC721}                from "lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
-
-// TODO add ERC721-holder logic
+import {SafeTransferLib}        from "lib/solmate/src/utils/SafeTransferLib.sol";
+import {ERC20}                  from "lib/solmate/src/tokens/ERC20.sol";
+import {FullMath}               from "./FullMath.sol";
 
 // @notice              Allows a buyer to execute an order given they've got
 //                      an secp256k1 signature from a seller containing verifiable
@@ -18,7 +17,14 @@ contract Cavemart {
 	// @dev This function ensures this contract can receive ETH
 	receive() external payable {}
 
-    // todo erc721.onTokenReceived()
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        return 0x150b7a02;
+    }
 
     //////////////////////////////////////////////////////////////////////
     // IMMUTABLE STORAGE
@@ -30,7 +36,7 @@ contract Cavemart {
 
     bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
 
-    // keccak256("Swap(address seller,address erc721,address erc20,uint256 tokenId,uint256 startPrice,uint256 endPrice,uint256 nonce,uint256 start,uint256 deadline)")
+    // keccak256("Swap(address seller,address erc721,address erc20,uint256 tokenId,uint256 startPrice,uint256 endPrice,uint256 start,uint256 deadline)")
     bytes32 public constant SWAP_TYPEHASH = 0x8bca9397be6761f8836a3f24b102db891d663d3e2e89a7c7eea2479c3431068b;
 
     //////////////////////////////////////////////////////////////////////
