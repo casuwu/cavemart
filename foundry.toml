@@ -12,13 +12,7 @@ out = 'out'
 libs = ['lib']
 
 # A list of remappings
-remappings = [
-    'ds-test/=lib/ds-test/src/',
-    'forge-std/=lib/forge-std/src/',
-    'openzeppelin-contracts/=lib/openzeppelin-contracts/',
-    'solmate/=lib/solmate/src/',
-    'src/=foundry-template/src/'
-]
+remappings = []
 
 # additional solc allow paths
 allow_paths = []

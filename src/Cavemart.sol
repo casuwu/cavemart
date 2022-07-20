@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import {IERC721}                from "lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+// import {ERC721}                from "lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import {SafeTransferLib}        from "lib/solmate/src/utils/SafeTransferLib.sol";
+import {ERC721}                 from "lib/solmate/src/tokens/ERC721.sol";
 import {ERC20}                  from "lib/solmate/src/tokens/ERC20.sol";
 import {FullMath}               from "./FullMath.sol";
 
@@ -246,7 +247,7 @@ contract Cavemart {
         }
 
         // Transfer 'erc721' from 'seller' to msg.sender/caller.
-        IERC721(data.erc721).safeTransferFrom(signer, msg.sender, data.tokenId);
+        ERC721(data.erc721).safeTransferFrom(signer, msg.sender, data.tokenId);
 
         // Emit event since state was mutated.
         emit OrderExecuted(signer, data.erc721, data.erc20, data.tokenId, price, data.deadline);
@@ -333,6 +334,10 @@ contract Cavemart {
         bytes32 s
     ) external virtual view returns (bool valid) {
 
+        bytes32 dataHash = keccak256(abi.encode(data));
+
+        if (executed[dataHash]) return false;
+
         // Make sure current time is greater than 'start' if order type is dutch auction. 
         if (data.start == 0 || data.endPrice == 0) {
             if (data.start > block.timestamp) return false;
@@ -345,7 +350,7 @@ contract Cavemart {
         if (data.deadline < block.timestamp) return false;
 
         // Make sure the 'seller' still owns the 'erc721' being offered, and has approved this contract to spend it.
-        if (IERC721(data.erc721).ownerOf(data.tokenId) != data.seller || IERC721(data.erc721).getApproved(data.tokenId) != address(this)) return false;
+        if (ERC721(data.erc721).ownerOf(data.tokenId) != data.seller || ERC721(data.erc721).getApproved(data.tokenId) != address(this)) return false;
 
         // Make sure the buyer has 'price' denominated in 'erc20' if 'erc20' is not native ETH.
         if (data.erc20 != address(0)) {
