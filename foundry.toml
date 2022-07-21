@@ -27,7 +27,6 @@ cache = true
 cache_path = 'cache'
 
 # Whether to ignore the cache
-force = true
 
 # The EVM version by hardfork name
 evm_version = 'london'

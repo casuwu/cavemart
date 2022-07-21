@@ -56,6 +56,15 @@ contract Cavemart {
     // @notice Returns whether a specific signature has been executed before.
     mapping(bytes32 => bool) public executed;
 
+    function isExecuted(
+        SwapMetadata calldata data
+    ) external view returns (bool) {
+
+        bytes32 dataHash = keccak256(abi.encode(data));
+
+        return executed[dataHash];
+    }
+
     //////////////////////////////////////////////////////////////////////
     // CONSTRUCTION
     //////////////////////////////////////////////////////////////////////
